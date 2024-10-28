@@ -2,6 +2,11 @@
 #include "platform.h"
 #include "DeckLinkAPI.h"
 
+// settings for NTSC 29.97 - UYVY pixel format
+#define BMD_DISPLAYMODE bmdModeNTSC
+#define TCISDROPFRAME true
+#define PIXEL_FMT bmdFormat8BitYUV
+
 using namespace std;
 
 std::string CFStringRefToString(CFStringRef cfString)
@@ -32,7 +37,10 @@ int main(int argc, char *argv[])
   HRESULT result;
   IDeckLinkIterator *deckLinkIterator;
   IDeckLink *deckLink;
+  IDeckLinkInput *deckLinkInput = NULL;
   IDeckLinkProfileAttributes *deckLinkAttributes = NULL;
+  IDeckLinkDisplayModeIterator *displayModeIterator = NULL;
+  IDeckLinkDisplayMode *deckLinkDisplayMode = NULL;
   int numDevices = 0;
 
   // Create an IDeckLinkIterator object to enumerate all DeckLink cards in the system
@@ -97,8 +105,63 @@ int main(int argc, char *argv[])
     // レコーダーかどうかを表示
     if (isRecorder)
     {
-      // レコーダーの場合、映像を取得する
+      // Start the capture
       cout << "This is a recorder" << endl;
+
+      // Query the DeckLink for its input interface
+      result = deckLink->QueryInterface(IID_IDeckLinkInput, (void **)&deckLinkInput);
+      if (result != S_OK)
+      {
+        fprintf(stderr, "Could not obtain the IDeckLinkInput interface - result = %08x\n", result);
+        return result;
+      }
+
+      if (deckLinkInput->GetDisplayModeIterator(&displayModeIterator) != S_OK)
+      {
+        fprintf(stderr, "Could not obtain the IDeckLinkDisplayModeIterator interface\n");
+        return E_FAIL;
+      }
+
+      while (displayModeIterator->Next(&deckLinkDisplayMode) == S_OK)
+      {
+        if (deckLinkDisplayMode->GetDisplayMode() == BMD_DISPLAYMODE)
+        {
+          int width = deckLinkDisplayMode->GetWidth();
+          int height = deckLinkDisplayMode->GetHeight();
+
+          cout << "Width: " << width << endl;
+          cout << "Height: " << height << endl;
+
+          // deckLinkDisplayMode->GetFrameRate(&m_frameDuration, &m_timeScale);
+          deckLinkDisplayMode->Release();
+          deckLinkDisplayMode = NULL;
+
+          break;
+        }
+
+        deckLinkDisplayMode->Release();
+        deckLinkDisplayMode = NULL;
+      }
+
+      // enable video input
+      if (deckLinkInput->EnableVideoInput(BMD_DISPLAYMODE, PIXEL_FMT, bmdVideoInputFlagDefault) != S_OK)
+      {
+        printf("Could not enable video input\n");
+        return E_FAIL;
+      }
+
+      // start streaming
+      if (deckLinkInput->StartStreams() != S_OK)
+      {
+        printf("Could not start streams\n");
+        return E_FAIL;
+      }
+    }
+
+    // Release the resources
+    if (deckLinkInput != nullptr)
+    {
+      deckLinkInput->Release();
     }
 
     // Release the IDeckLink instance when we've finished with it to prevent leaks
