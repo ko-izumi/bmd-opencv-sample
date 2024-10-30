@@ -4,7 +4,7 @@ CFLAGS=-std=c++11 -Wno-multichar -I $(SDK_PATH) -frtti `pkg-config --cflags open
 LDFLAGS=-lm -ldl -lpthread `pkg-config --libs opencv4`
 
 bmd-opencv-sample: main.cpp $(SDK_PATH)/DeckLinkAPIDispatch.cpp
-	$(CC) -o bmd-opencv-sample main.cpp platform.cpp DeckLinkCaptureDelegate.cpp $(SDK_PATH)/DeckLinkAPIDispatch.cpp -framework CoreFoundation ${CFLAGS} ${LDFLAGS}
+	$(CC) -o bmd-opencv-sample main.cpp DeckLinkUtil.cpp $(SDK_PATH)/DeckLinkAPIDispatch.cpp -framework CoreFoundation ${CFLAGS} ${LDFLAGS}
 
 clean:
 	rm -f DeviceList
