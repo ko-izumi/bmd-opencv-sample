@@ -1,6 +1,8 @@
 #include <iostream>
 #include "platform.h"
 #include "DeckLinkAPI.h"
+#include <opencv2/opencv.hpp>
+#include "DeckLinkCaptureDelegate.h"
 
 // settings for NTSC 29.97 - UYVY pixel format
 #define BMD_DISPLAYMODE bmdModeNTSC
@@ -42,6 +44,9 @@ int main(int argc, char *argv[])
   IDeckLinkDisplayModeIterator *displayModeIterator = NULL;
   IDeckLinkDisplayMode *deckLinkDisplayMode = NULL;
   int numDevices = 0;
+
+  // デリゲートのインスタンスを作成
+  DeckLinkCaptureDelegate *delegate = new DeckLinkCaptureDelegate();
 
   // Create an IDeckLinkIterator object to enumerate all DeckLink cards in the system
   result = GetDeckLinkIterator(&deckLinkIterator);
@@ -122,6 +127,8 @@ int main(int argc, char *argv[])
         return E_FAIL;
       }
 
+      deckLinkInput->SetCallback(delegate);
+
       while (displayModeIterator->Next(&deckLinkDisplayMode) == S_OK)
       {
         if (deckLinkDisplayMode->GetDisplayMode() == BMD_DISPLAYMODE)
@@ -156,6 +163,19 @@ int main(int argc, char *argv[])
         printf("Could not start streams\n");
         return E_FAIL;
       }
+
+      //
+
+      printf("Capturing...\n");
+      // test
+      cv::Mat img = cv::imread("image.png");
+      if (img.empty())
+      {
+        cout << "Could not open or find the image!" << endl;
+        return -1;
+      }
+      cv::imshow("Display window", img);
+      cv::waitKey(0);
     }
 
     // Release the resources
