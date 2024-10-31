@@ -48,6 +48,10 @@ int main(int argc, const char *argv[])
     {
       break;
     }
+    else if (cv::waitKey(30) == 32)
+    {
+      cout << "space" << endl;
+    }
     cv::Mat frame = util->capture();
     if (!frame.empty())
     {

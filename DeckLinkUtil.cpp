@@ -133,6 +133,20 @@ HRESULT DeckLinkUtil::VideoInputFrameArrived(/* in */ IDeckLinkVideoInputFrame *
         cv::Mat uyvy(height, width, CV_8UC2, data);
         cv::Mat image(height, width, CV_8UC3);
         cv::cvtColor(uyvy, image, cv::COLOR_YUV2BGR_UYVY);
+
+        // 画像の左下に文字を追加
+        std::string text = "Izumi";
+        int fontFace = cv::FONT_ITALIC;
+        double fontScale = 3.0;
+        int thickness = 6;
+        cv::Scalar color(255, 255, 255); // 白色 (BGRの3チャンネル)
+        int baseline = 0;
+        cv::Size textSize = cv::getTextSize(text, fontFace, fontScale, thickness, &baseline);
+
+        // 文字を描画する位置を指定（左下に配置）
+        cv::Point textOrg(10, height - 10);
+        cv::putText(image, text, textOrg, fontFace, fontScale, color, thickness);
+
         frame = image.clone();
         mtx.unlock();
     }
